@@ -20,7 +20,8 @@ import re
 import sys
 import time
 import xml.etree.ElementTree as ET
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from urllib.parse import quote
 
@@ -105,11 +106,21 @@ def quarter_label(iso_date):
     return f"Q2FY{(y + 1) % 100:02d}"
 
 
+PUB_FORMATS = ("%d-%b-%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%d-%m-%Y %H:%M:%S")
+
+
+def parse_pub(pub):
+    for fmt in PUB_FORMATS:
+        try:
+            return datetime.strptime((pub or "").strip()[:19], fmt)
+        except ValueError:
+            continue
+    return None
+
+
 def feed_date(pub):
-    try:
-        return datetime.strptime(pub.strip(), "%d-%b-%Y %H:%M:%S").strftime("%Y-%m-%d")
-    except ValueError:
-        return date.today().isoformat()
+    d = parse_pub(pub)
+    return d.strftime("%Y-%m-%d") if d else date.today().isoformat()
 
 
 # ---------------------------------------------------------------- parsing
@@ -130,6 +141,8 @@ def parse_feed(xml_text):
 
 def classify(item):
     d = item["desc"].lower()
+    if item["link"].lower().endswith(".xml") and ("investor meet" in d or "investors meet" in d):
+        return "meet"
     if "schedule of analysts or institutional investors meet" in d or "analyst/investor meet" in d:
         return "meet"
     if "board meeting intimation" in d or ("board meeting" in d and "financial result" in d and "outcome" not in d):
@@ -279,6 +292,8 @@ def collect(items, by_symbol, by_name, seen, fetcher=fetch):
         kind = classify(it)
         if not kind or it["link"] in seen:
             continue
+        if it.get("symbol") and it["symbol"] not in by_symbol:
+            continue  # backfill items carry a symbol: skip non-Nifty-200 before fetching anything
         stats["relevant"] += 1
         filed_on = feed_date(it["pub"])
         link = it["link"]
@@ -299,7 +314,7 @@ def collect(items, by_symbol, by_name, seen, fetcher=fetch):
                         events.append(ev)
             else:
                 # PDF or post-call filing: no symbol inside, match on company name
-                info = by_name.get(norm_name(it["title"]))
+                info = by_symbol.get(it.get("symbol", "")) or by_name.get(norm_name(it["title"]))
                 if info:
                     d = it["desc"].lower()
                     ev = {
@@ -322,9 +337,57 @@ def collect(items, by_symbol, by_name, seen, fetcher=fetch):
     return events, new_seen, stats
 
 
-def post_to_sheet(events, stats):
+def api_item(a):
+    """Map one NSE corporate-announcements API row to the same shape as an RSS item.
+    Field names are from memory, so several spellings are tried; backfill_sample.json shows the real ones."""
+    def g(*keys):
+        for k in keys:
+            v = a.get(k)
+            if v not in (None, ""):
+                return str(v).strip()
+        return ""
+
+    name = g("sm_name", "companyName", "comp_name", "name")
+    cat = g("desc", "subject", "category")
+    text = g("attchmntText", "attchmnttext", "body", "text")
+    pub = parse_pub(g("an_dt", "sort_date", "dt", "exchdisstime"))
+    return {
+        "title": name,
+        "link": g("attchmntFile", "attchmntfile", "attachment", "file"),
+        "desc": f"{name} has informed the Exchange about {cat} |SUBJECT: {text}",
+        "pub": pub.strftime("%d-%b-%Y %H:%M:%S") if pub else "",
+        "symbol": g("symbol").upper(),
+    }
+
+
+def fetch_backfill(days):
+    """Announcements of the last `days` days (plus today), oldest first, via NSE's date-range API."""
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    out = []
+    for n in range(days, -1, -1):
+        ds = (today - timedelta(days=n)).strftime("%d-%m-%Y")
+        text = fetch(f"https://www.nseindia.com/api/corporate-announcements?index=equities&from_date={ds}&to_date={ds}")
+        try:
+            data = json.loads(text)
+        except ValueError:
+            raise RuntimeError(f"NSE did not return JSON for {ds} (blocked or cookie step failed): {text[:150]!r}")
+        rows = data if isinstance(data, list) else data.get("data", [])
+        print(f"backfill {ds}: {len(rows)} announcements")
+        if rows and not (SAMPLES_DIR / "backfill_sample.json").exists():
+            SAMPLES_DIR.mkdir(exist_ok=True)
+            (SAMPLES_DIR / "backfill_sample.json").write_text(json.dumps(rows[:3], indent=1))
+        for a in rows:
+            it = api_item(a)
+            if it["link"]:
+                out.append(it)
+        time.sleep(1)
+    out.sort(key=lambda it: parse_pub(it["pub"]) or datetime.min)
+    return out
+
+
+def post_to_sheet(events, stats, backfill=False):
     url, secret = os.environ["APPS_SCRIPT_URL"], os.environ["APPS_SCRIPT_SECRET"]
-    r = requests.post(url, json={"secret": secret, "events": events, "stats": stats}, timeout=120)
+    r = requests.post(url, json={"secret": secret, "events": events, "stats": stats, "backfill": backfill}, timeout=180)
     r.raise_for_status()
     body = r.json()
     if not body.get("ok"):
@@ -334,18 +397,26 @@ def post_to_sheet(events, stats):
 
 def main():
     dry = "--dry-run" in sys.argv
+    days = int(os.environ.get("BACKFILL_DAYS") or 0)
+    if "--backfill" in sys.argv:
+        days = int(sys.argv[sys.argv.index("--backfill") + 1])
     by_symbol, by_name = load_nifty()
     seen = load_seen()
-    items = parse_feed(fetch(FEED_URL))
+    items = fetch_backfill(days) if days else parse_feed(fetch(FEED_URL))
     events, new_seen, stats = collect(items, by_symbol, by_name, seen)
     stats["events"] = len(events)
+    stats["backfill_days"] = days
     print(json.dumps(stats))
     for e in events:
         print(" ", e["kind"], e["symbol"], e.get("quarter"), e.get("date"), e.get("time", ""))
     if dry:
         return
-    resp = post_to_sheet(events, stats)
-    print("sheet:", resp)
+    if days:
+        # small batches: each event may create a calendar entry, and one request has a time limit
+        for i in range(0, max(len(events), 1), 25):
+            print("sheet:", post_to_sheet(events[i:i + 25], stats, backfill=True))
+    else:
+        print("sheet:", post_to_sheet(events, stats))
     save_seen(seen | new_seen)
 
 
