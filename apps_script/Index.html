@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_blank">
+<title>Nifty 200 Earnings &amp; Concalls</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --ink: #14171c; --muted: #5d6877; --line: #e2e5ea;
+    --accent: #2150c8; --accent-ink: #ffffff; --soft: #eef1f6;
+    --call: #1c46b8; --call-bg: #e4ebff; --res: #7a4d00; --res-bg: #ffefc9;
+    --today: #e7f4ec; --today-line: #2b8a4b; --warn: #8a3b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1115; --card: #161a20; --ink: #e8ebef; --muted: #9aa5b3; --line: #29303a;
+      --accent: #86a8ff; --accent-ink: #0a1020; --soft: #1e242d;
+      --call: #a9c0ff; --call-bg: #1b2a4f; --res: #ffd98a; --res-bg: #3a2d10;
+      --today: #13271b; --today-line: #3fae65; --warn: #ffb27a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; padding: 0 16px 48px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { padding: 22px 0 10px; }
+  h1 { font-size: 21px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 14px 0 14px; }
+  .tab { appearance: none; border: 0; background: none; color: var(--muted); font: inherit; font-weight: 600;
+         padding: 9px 12px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .chip { appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit;
+          font-size: 13px; padding: 5px 11px; border-radius: 999px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  input[type=search], select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--line);
+          border-radius: 8px; background: var(--card); color: var(--ink); }
+  input[type=search] { flex: 1 1 180px; min-width: 150px; }
+  .count { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  .day { margin: 18px 0 8px; font-weight: 700; font-size: 14px; display: flex; align-items: baseline; gap: 8px; }
+  .day small { color: var(--muted); font-weight: 500; }
+  .day.is-today { color: var(--today-line); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+          display: grid; grid-template-columns: 78px 1fr; gap: 4px 12px; }
+  .card.today { border-left: 3px solid var(--today-line); }
+  .when { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .when small { display: block; color: var(--muted); font-weight: 500; font-size: 11px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; margin-left: 6px;
+           vertical-align: 1px; }
+  .badge.call { background: var(--call-bg); color: var(--call); }
+  .badge.res { background: var(--res-bg); color: var(--res); }
+  .name b { font-size: 15px; }
+  .meta { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  a.btn, .btn { font: inherit; font-size: 13px; text-decoration: none; padding: 5px 10px; border-radius: 7px;
+                border: 1px solid var(--line); color: var(--ink); background: var(--soft); cursor: pointer; display: inline-block; }
+  a.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .nolink { font-size: 12.5px; color: var(--warn); }
+  .empty { padding: 36px 8px; text-align: center; color: var(--muted); }
+
+  .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  .stage { font-size: 12px; padding: 2px 7px; border-radius: 5px; background: var(--soft); white-space: nowrap; }
+
+  .news { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; }
+  .news .w { color: var(--muted); font-size: 12px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; }
+  #ical { display: none; width: 100%; margin-top: 6px; }
+  @media (max-width: 520px) {
+    .card { grid-template-columns: 1fr; }
+    .actions { grid-column: 1; }
+    .count { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Nifty 200 &middot; Earnings dates &amp; concalls</h1>
+    <div class="sub" id="checked"></div>
+    <div class="top" id="top"></div>
+    <input id="ical" type="text" readonly>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="schedule">Schedule</button>
+    <button class="tab" role="tab" data-tab="companies">Companies</button>
+    <button class="tab" role="tab" data-tab="news">What's new</button>
+  </div>
+
+  <div class="controls" id="controls"></div>
+  <div id="view"></div>
+
+  <footer>
+    Source: NSE corporate filings, checked every hour. All times IST.
+    Dial-in details are typed in by each company, so open the filing if something looks off.
+  </footer>
+</div>
+
+<script>
+const D = <?!= payload ?>;
+const TODAY = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safe = u => /^https?:\/\//i.test(u || '') ? u : '';
+const pad = n => String(n).padStart(2, '0');
+function addDays(iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function fmtDay(iso) { return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+function rel(iso) {
+  if (iso === TODAY) return 'Today';
+  if (iso === addDays(TODAY, 1)) return 'Tomorrow';
+  if (iso === addDays(TODAY, -1)) return 'Yesterday';
+  return '';
+}
+
+// ---- google calendar "add this event" link (no login to our calendar needed)
+function gcal(e) {
+  const r = e.r, isCall = e.kind === 'concall';
+  const d = e.date.replace(/-/g, '');
+  let dates;
+  if (isCall && e.time) {
+    const [h, m] = e.time.split(':').map(Number);
+    const start = new Date(Date.UTC(+e.date.slice(0, 4), +e.date.slice(5, 7) - 1, +e.date.slice(8, 10), h, m));
+    const end = new Date(start.getTime() + 3600000);
+    const f = x => x.toISOString().replace(/[-:]/g, '').slice(0, 15);
+    dates = f(start) + '/' + f(end);
+  } else {
+    dates = d + '/' + addDays(e.date, 1).replace(/-/g, '');
+  }
+  const title = (isCall ? 'Concall: ' : 'Results: ') + r.s + ' ' + r.q + ' (' + r.n + ')';
+  const link = safe(r.l);
+  const details = (isCall ? 'Dial-in / registration: ' + (link || 'not given') + '\n' : '') + 'Filing: ' + (safe(isCall ? r.cf : r.rf) || '');
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) +
+    '&dates=' + dates + '&ctz=Asia%2FKolkata&details=' + encodeURIComponent(details) + (link ? '&location=' + encodeURIComponent(link) : '');
+}
+
+// ---- data -> entries
+const entries = [];
+D.rows.forEach(r => {
+  if (r.cd) entries.push({ kind: 'concall', date: r.cd, time: r.ct || '', r });
+  if (r.rd) entries.push({ kind: 'result', date: r.rd, time: '', r });
+});
+entries.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 :
+  (a.time || '') < (b.time || '') ? -1 : (a.time || '') > (b.time || '') ? 1 : a.r.s.localeCompare(b.r.s));
+
+const S = { tab: 'schedule', range: '7', type: 'all', q: '', stage: '', quarter: '' };
+const $ = id => document.getElementById(id);
+
+function matches(r) {
+  if (!S.q) return true;
+  const hay = (r.s + ' ' + r.n + ' ' + r.i).toLowerCase();
+  return S.q.toLowerCase().split(/\s+/).every(w => hay.includes(w));
+}
+
+// ---- schedule
+function inRange(date) {
+  switch (S.range) {
+    case 'today': return date === TODAY;
+    case '7': return date >= TODAY && date <= addDays(TODAY, 7);
+    case '30': return date >= TODAY && date <= addDays(TODAY, 30);
+    case 'past': return date < TODAY && date >= addDays(TODAY, -14);
+    default: return true;
+  }
+}
+
+function card(e) {
+  const r = e.r, isCall = e.kind === 'concall', future = e.date >= TODAY;
+  const link = safe(r.l);
+  const when = isCall ? (e.time || 'time n/a') : 'All day';
+  const meta = [r.n, r.i, r.q].filter(Boolean).map(esc).join(' &middot; ') + (isCall && r.m ? ' &middot; ' + esc(r.m) : '');
+  let a = '';
+  if (isCall && future) {
+    if (link) a += '<a class="btn primary" href="' + esc(link) + '">Join / register</a>';
+    else a += '<span class="nolink">' + esc(r.l && r.l.charAt(0) === '(' ? r.l : (r.l ? 'No link: ' + r.l : 'No dial-in given, open the filing')) + '</span>';
+  }
+  const filing = safe(isCall ? r.cf : r.rf);
+  if (filing) a += '<a class="btn" href="' + esc(filing) + '">Filing</a>';
+  if (isCall && safe(r.p)) a += '<a class="btn" href="' + esc(r.p) + '">Post-call filing</a>';
+  if (future) a += '<a class="btn" href="' + esc(gcal(e)) + '">+ My calendar</a>';
+  return '<div class="card' + (e.date === TODAY ? ' today' : '') + '">' +
+    '<div class="when">' + esc(when) + (isCall && e.time ? '<small>IST</small>' : '') + '</div>' +
+    '<div><div class="name"><b>' + esc(r.s) + '</b><span class="badge ' + (isCall ? 'call' : 'res') + '">' + (isCall ? 'CONCALL' : 'RESULTS') + '</span></div>' +
+    '<div class="meta">' + meta + '</div></div>' +
+    (a ? '<div class="actions">' + a + '</div>' : '') + '</div>';
+}
+
+function renderSchedule() {
+  const list = entries.filter(e => inRange(e.date) && (S.type === 'all' || S.type === e.kind) && matches(e.r));
+  $('count').textContent = list.length + ' event' + (list.length === 1 ? '' : 's');
+  if (!list.length) {
+    $('view').innerHTML = '<div class="empty">' + (D.rows.length
+      ? 'Nothing matches. Try a wider range, or clear the search.'
+      : 'No events yet. This fills automatically as companies file their schedules.') + '</div>';
+    return;
+  }
+  let html = '', cur = '';
+  list.forEach(e => {
+    if (e.date !== cur) {
+      cur = e.date;
+      const r = rel(cur);
+      html += '<div class="day' + (cur === TODAY ? ' is-today' : '') + '">' + esc(fmtDay(cur)) + (r ? '<small>' + r + '</small>' : '') + '</div>';
+    }
+    html += card(e);
+  });
+  $('view').innerHTML = html;
+}
+
+// ---- companies
+function renderCompanies() {
+  let rows = D.rows.filter(r => matches(r) && (!S.stage || r.st === S.stage) && (!S.quarter || r.q === S.quarter));
+  rows.sort((a, b) => a.s.localeCompare(b.s) || (a.q < b.q ? 1 : -1));
+  $('count').textContent = rows.length + ' compan' + (rows.length === 1 ? 'y' : 'ies');
+  if (!rows.length) { $('view').innerHTML = '<div class="empty">No companies match.</div>'; return; }
+  let h = '<div class="tablewrap"><table><thead><tr><th>Company</th><th>Quarter</th><th>Results</th><th>Concall</th><th>Stage</th><th>Links</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const link = safe(r.l);
+    const call = r.cd ? esc(fmtDay(r.cd)) + (r.ct ? ' ' + esc(r.ct) : '') + (link && r.cd >= TODAY ? ' <a href="' + esc(link) + '">join</a>' : '') : '&ndash;';
+    let links = '';
+    if (safe(r.rf)) links += '<a href="' + esc(r.rf) + '">results</a> ';
+    if (safe(r.cf)) links += '<a href="' + esc(r.cf) + '">call</a> ';
+    if (safe(r.p)) links += '<a href="' + esc(r.p) + '">post-call</a>';
+    h += '<tr><td><b>' + esc(r.s) + '</b><div class="meta">' + esc(r.n) + (r.i ? ' &middot; ' + esc(r.i) : '') + '</div></td>' +
+      '<td>' + esc(r.q) + '</td><td>' + (r.rd ? esc(fmtDay(r.rd)) : '&ndash;') + '</td><td>' + call + '</td>' +
+      '<td><span class="stage">' + esc(r.st) + '</span></td><td>' + (links || '&ndash;') + '</td></tr>';
+  });
+  $('view').innerHTML = h + '</tbody></table></div>';
+}
+
+// ---- what's new
+function renderNews() {
+  const list = D.recent.filter(x => !S.q || (x.s + ' ' + x.n).toLowerCase().includes(S.q.toLowerCase()));
+  $('count').textContent = list.length + ' update' + (list.length === 1 ? '' : 's');
+  if (!list.length) { $('view').innerHTML = '<div class="empty">No updates yet.</div>'; return; }
+  $('view').innerHTML = list.map(x =>
+    '<div class="news"><div class="w">' + esc(x.w) + '</div><b>' + esc(x.s) + '</b> <span class="meta">' + esc(x.n) + ' ' + esc(x.q) + '</span><br>' +
+    esc(x.t) + (safe(x.l) ? ' &middot; <a href="' + esc(x.l) + '">open</a>' : '') + '</div>').join('');
+}
+
+// ---- controls
+function renderControls() {
+  const chips = (key, opts) => opts.map(o => '<button class="chip" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + (S[key] === o[0]) + '">' + o[1] + '</button>').join('');
+  let h = '';
+  if (S.tab === 'schedule') {
+    h += chips('range', [['today', 'Today'], ['7', 'Next 7 days'], ['30', 'Next 30 days'], ['past', 'Past 2 weeks'], ['all', 'All']]);
+    h += chips('type', [['all', 'All types'], ['concall', 'Concalls'], ['result', 'Results']]);
+  }
+  if (S.tab === 'companies') {
+    const stages = [...new Set(D.rows.map(r => r.st))].sort();
+    const qs = [...new Set(D.rows.map(r => r.q))].sort().reverse();
+    h += '<select id="stage"><option value="">All stages</option>' + stages.map(s => '<option' + (S.stage === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') + '</select>';
+    h += '<select id="quarter"><option value="">All quarters</option>' + qs.map(s => '<option' + (S.quarter === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') + '</select>';
+  }
+  h += '<input id="q" type="search" placeholder="Search company, symbol, industry" value="' + esc(S.q) + '">';
+  h += '<span class="count" id="count"></span>';
+  $('controls').innerHTML = h;
+  const q = $('q');
+  q.addEventListener('input', () => { S.q = q.value; renderView(); });
+  const st = $('stage'); if (st) st.addEventListener('change', () => { S.stage = st.value; renderView(); });
+  const qu = $('quarter'); if (qu) qu.addEventListener('change', () => { S.quarter = qu.value; renderView(); });
+}
+function renderView() { ({ schedule: renderSchedule, companies: renderCompanies, news: renderNews })[S.tab](); }
+function renderAll() {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === S.tab));
+  renderControls(); renderView();
+}
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { S.tab = t.dataset.tab; renderAll(); }));
+$('controls').addEventListener('click', ev => {
+  const b = ev.target.closest('.chip'); if (!b) return;
+  S[b.dataset.k] = b.dataset.v;
+  renderAll();
+});
+
+// ---- header
+$('checked').textContent = D.checked ? 'Last checked ' + D.checked + ' IST' : 'Waiting for the first check';
+if (D.calId) {
+  const id = encodeURIComponent(D.calId);
+  $('top').innerHTML =
+    '<a class="btn primary" href="https://calendar.google.com/calendar/render?cid=' + id + '">Subscribe in Google Calendar</a>' +
+    '<button class="btn" id="icalbtn">Outlook / other: iCal link</button>';
+  $('icalbtn').addEventListener('click', () => {
+    const f = $('ical');
+    f.value = 'https://calendar.google.com/calendar/ical/' + id + '/public/basic.ics';
+    f.style.display = 'block'; f.focus(); f.select();
+  });
+}
+// default to a useful view: if nothing in the next 7 days, show the next 30
+if (!entries.some(e => inRange(e.date))) S.range = '30';
+if (!entries.some(e => inRange(e.date))) S.range = 'all';
+renderAll();
+</script>
+</body>
+</html>
