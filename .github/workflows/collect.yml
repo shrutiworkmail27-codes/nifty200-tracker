@@ -3,7 +3,11 @@ name: collect
 on:
   schedule:
     - cron: "7 * * * *"   # every hour at :07 (UTC clock, runs 24h so nothing slips past midnight)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "One-time catch-up: also load this many past days (0 = normal run)"
+        default: "0"
 
 permissions:
   contents: write
@@ -31,6 +35,7 @@ jobs:
           RELAY_KEY: ${{ secrets.RELAY_KEY }}
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
           APPS_SCRIPT_SECRET: ${{ secrets.APPS_SCRIPT_SECRET }}
+          BACKFILL_DAYS: ${{ github.event.inputs.backfill_days }}
         run: python collector/collect.py
 
       - name: Keep samples of unseen filing formats
