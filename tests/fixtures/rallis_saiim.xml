@@ -1,0 +1,53 @@
+<!-- SAIIM V1.0 (22-04-2026) -->
+<xbrli:xbrl xmlns:in-capmkt="http://www.sebi.gov.in/xbrl/2026-03-31/in-capmkt" xmlns:in-capmkt-ent="http://www.sebi.gov.in/xbrl/Schedule_Of_Analysts_Or_Institutional_Investors_Meeting/2026-03-31/in-capmkt/in-capmkt-ent" xmlns:in-capmkt-roles="http://www.sebi.gov.in/xbrl/Schedule_Of_Analysts_Or_Institutional_Investors_Meeting/2026-03-31/in-capmkt-roles" xmlns:xbrldt="http://xbrl.org/2005/xbrldt" xmlns:nonnum="http://www.xbrl.org/dtr/type/non-numeric" xmlns:in-capmkt-types="http://www.sebi.gov.in/xbrl/2026-03-31/in-capmkt-types" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:net="http://www.xbrl.org/2009/role/net" xmlns:num="http://www.xbrl.org/dtr/type/numeric" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:negated="http://www.xbrl.org/2009/role/negated" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xl="http://www.xbrl.org/2003/XLink">
+<link:schemaRef xlink:type="simple" xlink:href="in-capmkt-ent-2026-03-31.xsd"/>
+<xbrli:context id="MainI">
+<xbrli:entity>
+<xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/ScripCode">500355</xbrli:identifier>
+</xbrli:entity>
+<xbrli:period>
+<xbrli:instant>2026-10-09</xbrli:instant>
+</xbrli:period>
+</xbrli:context>
+<xbrli:context id="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">
+<xbrli:entity>
+<xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/ScripCode">500355</xbrli:identifier>
+</xbrli:entity>
+<xbrli:period>
+<xbrli:instant>2026-10-09</xbrli:instant>
+</xbrli:period>
+<xbrli:scenario>
+<xbrldi:typedMember dimension="in-capmkt:IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeetingAxis">
+<in-capmkt:IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeetingDomain>IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeetingDomain1</in-capmkt:IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeetingDomain>
+</xbrldi:typedMember>
+</xbrli:scenario>
+</xbrli:context>
+<in-capmkt:NSESymbol contextRef="MainI">RALLIS</in-capmkt:NSESymbol>
+<in-capmkt:NameOfTheCompany contextRef="MainI">Rallis India Limited</in-capmkt:NameOfTheCompany>
+<in-capmkt:ScripCode contextRef="MainI">500355</in-capmkt:ScripCode>
+<in-capmkt:MSEISymbol contextRef="MainI">NOTLISTED</in-capmkt:MSEISymbol>
+<in-capmkt:ISIN contextRef="MainI">INE613A01020</in-capmkt:ISIN>
+<in-capmkt:TypeOfAnnouncement contextRef="MainI">New</in-capmkt:TypeOfAnnouncement>
+<in-capmkt:PurposeOfDisclosure contextRef="MainI">Schedule of Analysts or Institutional Investors Meet</in-capmkt:PurposeOfDisclosure>
+<in-capmkt:StageOfMeetingOrCallOrConferenceOrEvent contextRef="MainI">Intimation</in-capmkt:StageOfMeetingOrCallOrConferenceOrEvent>
+<in-capmkt:DateOfReport contextRef="MainI">2026-10-09</in-capmkt:DateOfReport>
+<in-capmkt:TypeOfMeetingForWhichIntimationIsGiven contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Earning/Quarterly Calls</in-capmkt:TypeOfMeetingForWhichIntimationIsGiven>
+<in-capmkt:DateOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">2026-10-23</in-capmkt:DateOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:TimeOfCommencementOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">11:00:00</in-capmkt:TimeOfCommencementOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:NameOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Earnings Conference Call for second quarter and half year ended September 30, 2026</in-capmkt:NameOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:PlaceOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Virtual</in-capmkt:PlaceOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:NameOfTheFundOrCompanyOfAnalystOrInstitutionalInvestorWithWhomTheMeetingIsScheduledForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">All investors / General Public</in-capmkt:NameOfTheFundOrCompanyOfAnalystOrInstitutionalInvestorWithWhomTheMeetingIsScheduledForIntimation>
+<in-capmkt:NameOfAnalystOrInstitutionalInvestorWithWhomTheMeetingIsScheduledForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Senior Management of Rallis India Limited</in-capmkt:NameOfAnalystOrInstitutionalInvestorWithWhomTheMeetingIsScheduledForIntimation>
+<in-capmkt:DesignationOfPersonWithWhomTheMeetingIsScheduledForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Senior Management of Rallis India Limited</in-capmkt:DesignationOfPersonWithWhomTheMeetingIsScheduledForIntimation>
+<in-capmkt:TypeOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Others</in-capmkt:TypeOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:DetailsOfOtherTypeOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Earning/Quarterly Calls</in-capmkt:DetailsOfOtherTypeOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:ModeOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Virtual</in-capmkt:ModeOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:AgendaOrReasonForMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Earning/Quarterly Calls</in-capmkt:AgendaOrReasonForMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:QuarterForWhichEarningsOrQuarterlyCallIsHeldForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Q2 Results</in-capmkt:QuarterForWhichEarningsOrQuarterlyCallIsHeldForIntimation>
+<in-capmkt:WeblinkOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">https://services.choruscall.in/DiamondPassRegistration/register?confirmationNumber=0006133&amp;linkSecurityString=dbb51ec</in-capmkt:WeblinkOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:NameOfContactPersonForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">Mr. Chirjeev Singh Arneja</in-capmkt:NameOfContactPersonForIntimation>
+<in-capmkt:ContactDetailsOfContactPersonForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">NA</in-capmkt:ContactDetailsOfContactPersonForIntimation>
+<in-capmkt:EmailIDOfContactPersonForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">chirjeev.singh@rallis.com</in-capmkt:EmailIDOfContactPersonForIntimation>
+<in-capmkt:AdditionalDetailsOfMeetingOrCallOrConferenceOrEventForIntimation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">NA</in-capmkt:AdditionalDetailsOfMeetingOrCallOrConferenceOrEventForIntimation>
+<in-capmkt:WhetherIntimationOfMeetingIncludesPresentation contextRef="I_IntimationOrScheduleOfAnalystsOrInstitutionalInvestorsMeeting1">false</in-capmkt:WhetherIntimationOfMeetingIncludesPresentation>
+</xbrli:xbrl>
