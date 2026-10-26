@@ -143,8 +143,38 @@ def parse_feed(xml_text):
     return items
 
 
+MONTHS = {m: i + 1 for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"))}
+_DATE_PATS = (
+    re.compile(r"\bon\s+([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})"),   # on October 23, 2026
+    re.compile(r"\bon\s+(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})"),   # on 23rd October 2026
+)
+
+
+def announced_result_date(text):
+    """Date from a press-release style notice such as 'Infosys to Announce Second Quarter Results on October 23, 2026'.
+    Returns ISO date or ''. Needs both 'announce' and 'result' in the text, so unrelated notices are ignored."""
+    t = text or ""
+    low = t.lower()
+    if "announce" not in low or "result" not in low:
+        return ""
+    for k, pat in enumerate(_DATE_PATS):
+        for m in pat.finditer(t):
+            mon, day, yr = (m.group(1), m.group(2), m.group(3)) if k == 0 else (m.group(2), m.group(1), m.group(3))
+            mi = MONTHS.get(mon[:3].lower())
+            if mi:
+                try:
+                    return date(int(yr), mi, int(day)).isoformat()
+                except ValueError:
+                    pass
+    return ""
+
+
 def classify(item):
     d = item["desc"].lower()
+    if "outcome" in d and ("financial result" in d or "results for the quarter" in d or "results for the half" in d):
+        return "outcome"
+    if announced_result_date(item["desc"]):
+        return "announce"
     if item["link"].lower().endswith(".xml") and ("investor meet" in d or "investors meet" in d):
         return "meet"
     if "schedule of analysts or institutional investors meet" in d or "analyst/investor meet" in d:
@@ -353,6 +383,15 @@ def collect(items, by_symbol, by_name, seen, fetcher=fetch):
                     if info:
                         ev["company"], ev["industry"] = info["company"], info["industry"]
                         events.append(ev)
+            elif kind in ("outcome", "announce"):
+                # no structured file: the date comes from the announcement text (announce) or is the filing day (outcome)
+                info = by_symbol.get(it.get("symbol", "")) or by_name.get(norm_name(it["title"]))
+                if info:
+                    when = announced_result_date(it["desc"]) if kind == "announce" else filed_on
+                    events.append({
+                        "kind": "result", "symbol": info["symbol"], "company": info["company"], "industry": info["industry"],
+                        "date": when, "filing_url": link, "filed_on": filed_on, "quarter": quarter_label(when),
+                    })
             else:
                 # PDF or post-call filing: no symbol inside, match on company name
                 info = by_symbol.get(it.get("symbol", "")) or by_name.get(norm_name(it["title"]))
