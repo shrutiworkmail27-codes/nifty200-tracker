@@ -1,10 +1,10 @@
-"""Nifty 200 earnings-date and concall tracker: collector.
+"""Nifty 500 earnings-date and concall tracker: collector.
 
 Reads NSE's announcements RSS (via your Cloudflare relay), picks out
   - Schedule of Analysts / Institutional Investors Meet  (earnings call schedule, XBRL)
   - Board Meeting Intimation                              (result date, XBRL, best effort)
   - Con. call updates / audio / transcript                (post-call filings, best effort)
-keeps only Nifty 200 symbols, and POSTs the events to the Google Apps Script web app.
+keeps only Nifty 500 symbols, and POSTs the events to the Google Apps Script web app.
 
 Env vars:
   RELAY_URL, RELAY_KEY        Cloudflare relay (optional; direct fetch if RELAY_URL empty)
@@ -28,15 +28,16 @@ from urllib.parse import quote
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-NIFTY_FILE = ROOT / "data" / "nifty200.csv"
+NIFTY_FILE = ROOT / "data" / "nifty500.csv"
 STATE_FILE = ROOT / "state" / "seen.json"
 SAMPLES_DIR = ROOT / "samples"
 
 FEED_URL = "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml"
-NIFTY_URL = "https://archives.nseindia.com/content/indices/ind_nifty200list.csv"
+NIFTY_URL = "https://archives.nseindia.com/content/indices/ind_nifty500list.csv"
 INDEX_BASE = "https://archives.nseindia.com/content/indices/"
 # index-group lists used for the "Nifty 50 / Next 50 / Midcap" filter on the web page
-GROUP_LISTS = {"Nifty 50": "ind_nifty50list.csv", "Next 50": "ind_niftynext50list.csv"}
+GROUP_LISTS = {"Nifty 50": "ind_nifty50list.csv", "Next 50": "ind_niftynext50list.csv",
+               "Midcap": "ind_niftymidcap150list.csv", "Smallcap": "ind_niftysmallcap250list.csv"}
 
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -263,17 +264,20 @@ def read_symbols(text):
     return {(r.get("Symbol") or "").strip().upper() for r in csv.DictReader(io.StringIO(text)) if r.get("Symbol")}
 
 
-def assign_groups(by_symbol, n50, next50):
-    """Tag each Nifty 200 company: Nifty 50, Next 50, or Midcap (the rest). Midcap is only assigned
-    when BOTH lists are known, otherwise a company could be mislabelled."""
-    both = bool(n50) and bool(next50)
+def assign_groups(by_symbol, n50, next50, mid=frozenset(), small=frozenset()):
+    """Tag each company: Nifty 50, Next 50, Midcap (150) or Smallcap (250). Anything not in a list stays
+    untagged. Midcap/Smallcap are only used when their list was downloaded."""
     for sym, info in by_symbol.items():
         if sym in n50:
             info["group"] = "Nifty 50"
         elif sym in next50:
             info["group"] = "Next 50"
+        elif sym in mid:
+            info["group"] = "Midcap"
+        elif sym in small:
+            info["group"] = "Smallcap"
         else:
-            info["group"] = "Midcap" if both else ""
+            info["group"] = ""
 
 
 def refresh_list(url, path):
@@ -298,7 +302,7 @@ def load_nifty():
         by_symbol[sym] = info
         by_name[norm_name(info["company"])] = info
     groups = {g: read_symbols(refresh_list(INDEX_BASE + f, NIFTY_FILE.parent / f.replace("ind_", "").replace("list", ""))) for g, f in GROUP_LISTS.items()}
-    assign_groups(by_symbol, groups["Nifty 50"], groups["Next 50"])
+    assign_groups(by_symbol, groups["Nifty 50"], groups["Next 50"], groups["Midcap"], groups["Smallcap"])
     return by_symbol, by_name
 
 
