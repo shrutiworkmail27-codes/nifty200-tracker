@@ -465,6 +465,64 @@ def fetch_backfill(days):
     return out
 
 
+def _pick(a, *keys):
+    for k in keys:
+        v = a.get(k)
+        if v not in (None, ""):
+            return str(v).strip()
+    return ""
+
+
+def parse_any_date(text):
+    """ISO date from '28-Oct-2026', '28-10-2026', '2026-10-28' or '28 Oct 2026'; '' if unreadable."""
+    t = (text or "").strip()[:11].strip()
+    for fmt in ("%d-%b-%Y", "%d-%m-%Y", "%Y-%m-%d", "%d %b %Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(t, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return ""
+
+
+def board_calendar_events(rows, by_symbol, today_iso):
+    """Result-date events from NSE's board-meetings calendar rows (field names tried in several spellings).
+    Keeps meetings whose purpose mentions results, for companies in the tracked list."""
+    out = []
+    for a in rows:
+        sym = _pick(a, "bm_symbol", "symbol", "sym").upper()
+        info = by_symbol.get(sym)
+        purpose = (_pick(a, "bm_purpose", "purpose", "bm_desc") + " " + _pick(a, "bm_desc", "desc")).lower()
+        when = parse_any_date(_pick(a, "bm_date", "date", "meetingDate", "boardMeetingDate"))
+        if not info or not when or "result" not in purpose:
+            continue
+        out.append({
+            "kind": "result", "symbol": sym, "company": info["company"], "industry": info["industry"],
+            "date": when, "filing_url": _pick(a, "attachment", "attchmntFile", "bm_attachment"),
+            "filed_on": today_iso, "quarter": quarter_label(when),
+        })
+    return out
+
+
+def fetch_board_calendar(by_symbol, days_ahead=60, days_back=7):
+    """NSE's own board-meetings calendar: one request covers every company, past week to two months ahead.
+    Any failure is logged and returns [] so the normal collection still runs."""
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+    f, t = (today - timedelta(days=days_back)).strftime("%d-%m-%Y"), (today + timedelta(days=days_ahead)).strftime("%d-%m-%Y")
+    try:
+        text = fetch(f"https://www.nseindia.com/api/corporate-board-meetings?index=equities&from_date={f}&to_date={t}")
+        data = json.loads(text)
+    except Exception as e:
+        print(f"WARN: board-meetings calendar not available ({e}); relying on filings only")
+        return []
+    rows = data if isinstance(data, list) else data.get("data", [])
+    if rows:
+        SAMPLES_DIR.mkdir(exist_ok=True)
+        (SAMPLES_DIR / "board_calendar_sample.json").write_text(json.dumps(rows[:3], indent=1))
+    evs = board_calendar_events(rows, by_symbol, today.isoformat())
+    print(f"board-meetings calendar: {len(rows)} rows, {len(evs)} result dates for tracked companies")
+    return evs
+
+
 def post_to_sheet(events, stats, backfill=False, universe=None):
     url, secret = os.environ["APPS_SCRIPT_URL"], os.environ["APPS_SCRIPT_SECRET"]
     body = {"secret": secret, "events": events, "stats": stats, "backfill": backfill}
@@ -487,6 +545,15 @@ def main():
     seen = load_seen()
     items = fetch_backfill(days) if days else parse_feed(fetch(FEED_URL))
     events, new_seen, stats = collect(items, by_symbol, by_name, seen)
+    cal_events = fetch_board_calendar(by_symbol)
+    cal_keys = set()
+    for e in cal_events:
+        k = f"bm:{e['symbol']}:{e['date']}"
+        if k not in seen:
+            events.append(e)
+            cal_keys.add(k)
+    new_seen |= cal_keys
+    stats["calendar_new"] = len(cal_keys)
     stats["events"] = len(events)
     stats["backfill_days"] = days
     uni = universe_payload(by_symbol)
